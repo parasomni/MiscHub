@@ -367,12 +367,6 @@ void send_arp_request(pcap_t* handle, char* net_interface, uint8_t* source_mac, 
         exit(EXIT_FAILURE);
     }
 
-    // Check for memory corruption
-    if (packet == NULL) {
-        fprintf(stderr, "[E] Packet buffer is NULL after crafting packet\n");
-        exit(EXIT_FAILURE);
-    }
-
     if (pcap_sendpacket(handle, packet, PACKET_LEN) != 0) {
         fprintf(stderr, "[E] Failed to send ARP request: %s\n", pcap_geterr(handle));
         fflush(stderr);
@@ -392,12 +386,6 @@ void send_arp_request(pcap_t* handle, char* net_interface, uint8_t* source_mac, 
 void send_arp_request(int sockfd, char* net_interface, uint8_t* source_mac, uint8_t* sender_ip, uint8_t* target_ip) {
     uint8_t packet[PACKET_LEN];
     craft_arp_broadcast_packet(packet, source_mac, sender_ip, target_ip);
-
-    // Check for memory corruption
-    if (packet == NULL) {
-        fprintf(stderr, "[E] Packet buffer is NULL after crafting packet\n");
-        exit(EXIT_FAILURE);
-    }
 
     struct sockaddr_ll addr = {0};
     addr.sll_family = AF_PACKET;
