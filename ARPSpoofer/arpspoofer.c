@@ -11,10 +11,13 @@
 #include <windows.h>
 #include <iphlpapi.h>
 #include <process.h>
+// ncessary for visual studio
+#ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "wpcap.lib")
+#endif
 #else
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -355,7 +358,7 @@ void craft_arp_target_packet(uint8_t* packet, uint8_t* source_mac, uint8_t* targ
 }
 
 #ifdef _WIN32
-void send_arp_request(pcap_t* handle, char* net_interface, uint8_t* source_mac, uint8_t* sender_ip, uint8_t* target_ip) {
+void send_arp_request(pcap_t* handle, uint8_t* source_mac, uint8_t* sender_ip, uint8_t* target_ip) {
     uint8_t packet[PACKET_LEN];
     memset(packet, 0, PACKET_LEN);
 
@@ -402,13 +405,13 @@ void send_arp_request(int sockfd, char* net_interface, uint8_t* source_mac, uint
 #endif
 
 #ifdef _WIN32
-void receive_destination_mac(pcap_t* handle, char* net_interface, uint8_t* sender_ip, uint8_t* host_mac, uint8_t* target_ip, uint8_t* sender_mac) {
+void receive_destination_mac(pcap_t* handle, uint8_t* sender_ip, uint8_t* host_mac, uint8_t* target_ip, uint8_t* sender_mac) {
     printf("[i] Waiting for ARP reply from %d.%d.%d.%d...\n", target_ip[0], target_ip[1], target_ip[2], target_ip[3]);
     struct pcap_pkthdr* header;
     const uint8_t* packet;
     int res;
     while (!shutdown_initialized) {
-        send_arp_request(handle, net_interface, host_mac, sender_ip, target_ip);
+        send_arp_request(handle, host_mac, sender_ip, target_ip);
         res = pcap_next_ex(handle, &header, &packet);
         if (res == 0) {
             // Timeout expired
@@ -470,7 +473,6 @@ void receive_destination_mac(int sockfd, char* net_interface, uint8_t* sender_ip
 int send_packet(uint8_t* source_mac, uint8_t* sender_ip, uint8_t* target_mac, uint8_t* target_ip, char* net_interface) {
     uint8_t packet[PACKET_LEN];
     craft_arp_target_packet(packet, source_mac, target_mac, sender_ip, target_ip);
-    char errbuf[PCAP_ERRBUF_SIZE];
     pcap_t* handle = open_adapter(net_interface);
 
    while (!shutdown_initialized) {
@@ -736,7 +738,7 @@ int main(int argc, char* argv[]){
     if (!check_mac(gateway_mac)){
     printf("[i] Getting MAC address for gateway %d.%d.%d.%d\n", gateway_ip[0], gateway_ip[1], gateway_ip[2], gateway_ip[3]);
 #ifdef _WIN32
-    receive_destination_mac(handle, net_interface, sender_ip, source_mac, gateway_ip, gateway_mac);
+    receive_destination_mac(handle, sender_ip, source_mac, gateway_ip, gateway_mac);
 #else
     receive_destination_mac(sockfd, net_interface, sender_ip, source_mac, gateway_ip, gateway_mac);
 #endif    
@@ -745,7 +747,7 @@ int main(int argc, char* argv[]){
     if (!check_mac(target_mac)){
     printf("[i] Getting MAC address for target %d.%d.%d.%d\n", target_ip[0], target_ip[1], target_ip[2], target_ip[3]);
 #ifdef _WIN32
-    receive_destination_mac(handle, net_interface, sender_ip, source_mac, target_ip, target_mac);
+    receive_destination_mac(handle, sender_ip, source_mac, target_ip, target_mac);
 #else 
     receive_destination_mac(sockfd, net_interface, sender_ip, source_mac, target_ip, target_mac);
 #endif
