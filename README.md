@@ -1,3 +1,6 @@
 # Current project list
  - ARP spoofer
- - HTTP server
+ - HTTP server (university project)
+ - Pin cracker
+ - Prime number calculator (university project)
+ 
