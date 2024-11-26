@@ -22,7 +22,7 @@ def make_dirs():
     print("setting configuration")
     os.system("mv ultron.config /etc/ultron/ultron.config")
     print("installing triggers")
-    os.system("mv ultron /etc/ultron/ultron")
+    os.system("mv ultron.py /usr/bin/ultron")
 
 
 if __name__ == "__main__":
